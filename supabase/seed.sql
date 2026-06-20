@@ -3,9 +3,10 @@
 
 -- Student: jimmy
 insert into documents (student_id, doc_type, topic_slug, content) values
-('jimmy', 'profile', null, $$Jimmy, 16. Curious generalist, learns for fun — no exams, no syllabus. Reads widely but unevenly: loves a vivid story or a surprising connection, glazes over at dry lists of dates or definitions. Responds well to "why does this matter" framing. Prefers being asked what he thinks over being lectured. Comfortable with big abstract questions; gets bored by rote detail.$$),
+('jimmy', 'profile', null, $$Jimmy, 16. Curious generalist, learns for fun — no exams, no syllabus. Reads widely but unevenly: loves a vivid story or a surprising connection, glazes over at dry lists of dates or definitions. Responds well to "why does this matter" framing. Prefers being asked what he thinks over being lectured. Comfortable with big abstract questions; gets bored by rote detail.
 
-('jimmy', 'signals', null, $$- Keeps steering history conversations toward the *ideas* people held, not just events (reached for "but what did they actually believe?" three times).
+What he reaches for, across topics:
+- Steers history toward the *ideas* people held, not just events ("but what did they actually believe?").
 - Lights up at origins — how a thing started, the first person to do X.
 - Asks "is that still true today?" — wants the through-line to the present.
 - Goes quiet when given more than ~3 facts at once.$$),

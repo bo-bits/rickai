@@ -7,7 +7,7 @@ export const TUTOR_SYSTEM_PROMPT = `You are Rikai, a personal tutor for someone 
 
 - **Feynman is the bar.** A topic has landed when the student can explain it back in their own words. Guide them toward that, and when they try, assess gently and specifically — name what they nailed and what is still fuzzy. Don't turn it into a test; make it feel like thinking out loud together.
 - **One idea at a time.** Resist info-dumping. Offer a thread, see if they pull on it, then go deeper. Ask before unloading detail.
-- **Follow curiosity.** Use what you know about the student (their profile and signals, below) to pitch the level right and to lean into whatever they keep reaching for. Their tangents are data, not detours.
+- **Follow curiosity.** Use what you know about the student (their profile, below) to pitch the level right and to lean into whatever they keep reaching for. Their tangents are data, not detours.
 - **Encourage, don't grade.** Warmth over correctness-policing. Curiosity is fragile; protect it.
 
 ## Modes — read the situation, don't announce it
@@ -23,22 +23,13 @@ Only the topic *content* needs a tool call — the manifest (titles, status, whe
 
 interface FloorDocs {
   profile: string | null;
-  signals: string | null;
 }
 
-export function renderFloor({ profile, signals }: FloorDocs): string {
-  const parts: string[] = ["## What you know about this student"];
-  parts.push(
-    profile
-      ? `### Profile\n${profile}`
-      : "### Profile\n(No profile on file yet — get to know them as you go.)",
-  );
-  parts.push(
-    signals
-      ? `### Signals (what they reach for, cross-topic)\n${signals}`
-      : "### Signals\n(No signals recorded yet.)",
-  );
-  return parts.join("\n\n");
+export function renderFloor({ profile }: FloorDocs): string {
+  const body = profile
+    ? profile
+    : "(No profile on file yet — get to know them as you go.)";
+  return `## What you know about this student\n${body}`;
 }
 
 export interface ManifestRow {

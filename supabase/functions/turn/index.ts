@@ -7,7 +7,8 @@
 // this single invocation, persists the full messages array, and returns the reply.
 
 import Anthropic from "npm:@anthropic-ai/sdk@0.71.0";
-import { createClient } from "jsr:@supabase/supabase-js@2";
+import { anthropic, MODEL, supabase } from "../_shared/clients.ts";
+import { CORS_HEADERS, json } from "../_shared/http.ts";
 import {
   type ManifestRow,
   renderFloor,
@@ -15,32 +16,8 @@ import {
   TUTOR_SYSTEM_PROMPT,
 } from "./system_prompt.ts";
 
-const MODEL = Deno.env.get("ANTHROPIC_MODEL") ?? "claude-sonnet-4-6";
 const MAX_TOKENS = 4096;
 const MAX_TOOL_ITERATIONS = 5;
-
-const anthropic = new Anthropic({
-  apiKey: Deno.env.get("ANTHROPIC_API_KEY"),
-});
-
-const supabase = createClient(
-  Deno.env.get("SUPABASE_URL")!,
-  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-);
-
-const CORS_HEADERS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
-
-function json(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
-  });
-}
 
 const READ_TOPIC_TOOL: Anthropic.Tool = {
   name: "read_topic",
@@ -116,10 +93,11 @@ Deno.serve(async (req) => {
   // Latest open session for (student_id, topic_slug), else create one.
   let sessionId: string;
   let messages: Anthropic.MessageParam[];
+  let summary: string | null = null;
 
   const sessionQuery = supabase
     .from("sessions")
-    .select("id, messages")
+    .select("id, messages, summary")
     .eq("student_id", studentId)
     .is("ended_at", null)
     .order("started_at", { ascending: false })
@@ -137,6 +115,7 @@ Deno.serve(async (req) => {
   if (existing) {
     sessionId = existing.id;
     messages = (existing.messages as Anthropic.MessageParam[]) ?? [];
+    summary = existing.summary ?? null;
   } else {
     const { data: created, error: createErr } = await supabase
       .from("sessions")
@@ -155,19 +134,17 @@ Deno.serve(async (req) => {
 
   messages.push({ role: "user", content: userMessage });
 
-  // Floor context: profile + signals documents.
-  const { data: floorDocs, error: floorErr } = await supabase
+  // Floor context: the profile document.
+  const { data: profileDoc, error: floorErr } = await supabase
     .from("documents")
-    .select("doc_type, content")
+    .select("content")
     .eq("student_id", studentId)
-    .in("doc_type", ["profile", "signals"]);
+    .eq("doc_type", "profile")
+    .maybeSingle();
   if (floorErr) {
     return json({ error: `floor load failed: ${floorErr.message}` }, 500);
   }
-  const profile =
-    floorDocs?.find((d) => d.doc_type === "profile")?.content ?? null;
-  const signals =
-    floorDocs?.find((d) => d.doc_type === "signals")?.content ?? null;
+  const profile = profileDoc?.content ?? null;
 
   // Manifest: lightweight topic rows.
   const { data: topicRows, error: topicErr } = await supabase
@@ -178,11 +155,19 @@ Deno.serve(async (req) => {
     return json({ error: `manifest load failed: ${topicErr.message}` }, 500);
   }
 
-  const system = [
+  const systemParts = [
     TUTOR_SYSTEM_PROMPT,
-    renderFloor({ profile, signals }),
+    renderFloor({ profile }),
     renderManifest((topicRows ?? []) as ManifestRow[], topicSlug),
-  ].join("\n\n");
+  ];
+  // A compacted session carries a summary of the prior conversation so this
+  // turn can resume coherently from where the earlier session left off.
+  if (summary) {
+    systemParts.push(
+      `## Where this conversation is resuming from\nThis is a continuation of an earlier conversation that was summarized. Pick up naturally from here; don't re-introduce yourself or restate what's below.\n\n${summary}`,
+    );
+  }
+  const system = systemParts.join("\n\n");
 
   // --- Inner tool loop (resolves within this one invocation) ----------------
 
