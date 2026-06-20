@@ -13,4 +13,8 @@ _Format: [YYYY-MM-DD] **Signal type** — what was observed, and why it's signif
 
 ---
 
+[2026-06-20] **explains-well** — Gave a clean unprompted explanation of RAG and vector DBs after one session. Mental model formed quickly; likely to hit "solid" after one more session on retrieval mechanics.
+
+[2026-06-20] **reaches-for** — Immediately framed agents as "modular" and described context accumulation before it was introduced. Strong instinct for system-level thinking.
+
 [2026-06-20] **reaches-for** — When asked why empires fall, immediately reached for Ray Dalio's *Changing World Order* framework (debt cycles, reserve currencies, internal conflict). Has exposure to macro big-picture models but self-reports not retaining details well.

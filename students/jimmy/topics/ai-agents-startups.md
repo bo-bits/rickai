@@ -4,22 +4,27 @@
 How AI agents actually work under the hood, and how startups are building with them in practice.
 
 ## Status
-- **Level:** exploring
-- **Confidence:** low
+- **Level:** developing
+- **Confidence:** medium
 - **Last visited:** 2026-06-20
-- **Sessions:** 0
+- **Sessions:** 1
 
 ## What they know
-_Nothing recorded yet._
+- Agents run on a loop based on goals and triggers — each action informs the next
+- They don't store full context; instead they use a vector database (meaning-based search) that retrieves relevant chunks on demand
+- Four-layer memory stack: long-term memory (vector DB), live data (tool calls to APIs), instructions (system prompt), working memory (current context)
+- Common startup use cases: sales outreach, customer support, recruiting, dev (Devin/Cursor), finance monitoring
 
 ## Misconceptions
-_None surfaced yet._
+- Slight conflation: retrieval is triggered by tool call logic, not purely the agent deciding what's relevant autonomously. Small but worth correcting next session.
 
 ## What clicked
-_Nothing recorded yet._
+- Vector DB as meaning-based search (vs keyword search)
+- The four-layer memory stack framing
+- "High-volume, repetitive, multi-step tasks where inputs/outputs are mostly text or structured data"
 
 ## Open thread
-_What actually makes an "agent" different from a regular AI chatbot?_
+How multiple agents orchestrate and hand off tasks to each other — multi-agent systems and startup architecture.
 
 ## Related
 - [[philippines-spanish-history]]

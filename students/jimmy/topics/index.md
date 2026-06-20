@@ -4,7 +4,7 @@ _One line per topic explored. Updated after each session. The teacher reads this
 
 | Slug | Title | Status | Last visited | Tags |
 |------|-------|--------|-------------|------|
-| ai-agents-startups | AI Agents & Startups | exploring | 2026-06-20 | technology, AI, entrepreneurship |
+| ai-agents-startups | AI Agents & Startups | developing | 2026-06-20 | technology, AI, entrepreneurship |
 | philippines-spanish-history | Philippines Under Spanish Rule | exploring | 2026-06-20 | history, Southeast Asia, colonialism |
 
 ## Status key
