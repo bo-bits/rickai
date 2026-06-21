@@ -226,6 +226,14 @@ otp_length = 6
 # Number of seconds before the email OTP expires (defaults to 1 hour).
 otp_expiry = 3600
 
+# signInWithOtp sends a Magic Link by default; including {{ .Token }} in this
+# template makes it also deliver the 6-digit code the app's verifyOtp expects.
+# Both link + code are present so prefetching mail clients can't burn the
+# single-use token before the user enters the code.
+[auth.email.template.magic_link]
+subject = "Your rickai sign-in code"
+content_path = "./supabase/templates/magic_link.html"
+
 # Use a production-ready SMTP server
 # [auth.email.smtp]
 # enabled = true

@@ -1,11 +1,12 @@
 # rickai mobile
 
-Expo (SDK 55, expo-router) client for the rickai backend. This is **plumbing**:
+Expo (SDK 56, expo-router) client for the rickai backend. This is **plumbing**:
 auth + the 3-tab shell + a verified connection to the `turn` edge function. UI/UX
 comes later.
 
 Kept JS-only (no custom native modules) so it runs in **Expo Go** — scan the QR
-with the Expo Go app (must support SDK 55). We'll graduate to a development build
+with the latest Expo Go app (Expo Go is single-SDK; the App Store build runs
+SDK 56). We'll graduate to a development build
 (`npx expo run:ios`) when we add a native dependency, e.g. native Google/Apple
 sign-in.
 
