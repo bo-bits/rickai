@@ -2,13 +2,14 @@
 //
 // The edge function owns conversation state (channel-agnostic: Telegram, Slack,
 // or our own app all just forward the latest user message). It loads floor
-// context (profile + signals) + a topic manifest, exposes a `read_topic` tool so
+// context (the profile doc) + a topic manifest, exposes a `read_topic` tool so
 // the model can pull topic content on demand, resolves the inner tool loop within
 // this single invocation, persists the full messages array, and returns the reply.
 
 import Anthropic from "npm:@anthropic-ai/sdk@0.71.0";
-import { anthropic, MODEL, supabase } from "../_shared/clients.ts";
-import { CORS_HEADERS, json } from "../_shared/http.ts";
+import { MODEL, supabase } from "../_shared/clients.ts";
+import { json, withRequest } from "../_shared/http.ts";
+import { callModel } from "../_shared/telemetry.ts";
 import {
   type ManifestRow,
   renderFloor,
@@ -66,14 +67,7 @@ interface TurnRequest {
   user_message?: string;
 }
 
-Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: CORS_HEADERS });
-  }
-  if (req.method !== "POST") {
-    return json({ error: "method not allowed" }, 405);
-  }
-
+Deno.serve(withRequest("turn", async (req, ctx) => {
   let body: TurnRequest;
   try {
     body = await req.json();
@@ -87,6 +81,7 @@ Deno.serve(async (req) => {
 
   if (!studentId) return json({ error: "student_id is required" }, 400);
   if (!userMessage) return json({ error: "user_message is required" }, 400);
+  ctx.studentId = studentId;
 
   // --- Load state -----------------------------------------------------------
 
@@ -131,6 +126,7 @@ Deno.serve(async (req) => {
     sessionId = created.id;
     messages = [];
   }
+  ctx.sessionId = sessionId;
 
   messages.push({ role: "user", content: userMessage });
 
@@ -174,7 +170,7 @@ Deno.serve(async (req) => {
   let assistantText = "";
   try {
     for (let i = 0; i < MAX_TOOL_ITERATIONS; i++) {
-      const response = await anthropic.messages.create({
+      const response = await callModel(ctx, i, {
         model: MODEL,
         max_tokens: MAX_TOKENS,
         thinking: { type: "adaptive" },
@@ -228,5 +224,9 @@ Deno.serve(async (req) => {
     return json({ error: `session save failed: ${saveErr.message}` }, 500);
   }
 
-  return json({ session_id: sessionId, assistant_message: assistantText });
-});
+  return json({
+    session_id: sessionId,
+    assistant_message: assistantText,
+    request_id: ctx.requestId,
+  });
+}));

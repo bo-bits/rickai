@@ -7,8 +7,9 @@
 // (curl); no automation in this iteration.
 
 import type Anthropic from "npm:@anthropic-ai/sdk@0.71.0";
-import { anthropic, MODEL, supabase } from "../_shared/clients.ts";
-import { CORS_HEADERS, json } from "../_shared/http.ts";
+import { MODEL, supabase } from "../_shared/clients.ts";
+import { json, withRequest } from "../_shared/http.ts";
+import { callModel } from "../_shared/telemetry.ts";
 import { renderTranscript } from "../_shared/transcript.ts";
 import {
   CONSOLIDATE_SYSTEM_PROMPT,
@@ -172,14 +173,7 @@ async function updateTopic(
   return { kind: "topic", slug, created: true };
 }
 
-Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: CORS_HEADERS });
-  }
-  if (req.method !== "POST") {
-    return json({ error: "method not allowed" }, 405);
-  }
-
+Deno.serve(withRequest("consolidate", async (req, ctx) => {
   let body: ConsolidateRequest;
   try {
     body = await req.json();
@@ -189,6 +183,7 @@ Deno.serve(async (req) => {
 
   const sessionId = body.session_id?.trim();
   if (!sessionId) return json({ error: "session_id is required" }, 400);
+  ctx.sessionId = sessionId;
 
   // --- Load the session -----------------------------------------------------
   const { data: session, error: sessionErr } = await supabase
@@ -202,6 +197,7 @@ Deno.serve(async (req) => {
   if (!session) return json({ error: "session not found" }, 404);
 
   const studentId = session.student_id as string;
+  ctx.studentId = studentId;
   const messages = (session.messages as Anthropic.MessageParam[]) ?? [];
   const transcript = renderTranscript(messages);
 
@@ -254,7 +250,7 @@ Deno.serve(async (req) => {
 
   try {
     for (let i = 0; i < MAX_TOOL_ITERATIONS; i++) {
-      const response = await anthropic.messages.create({
+      const response = await callModel(ctx, i, {
         model: MODEL,
         max_tokens: MAX_TOKENS,
         thinking: { type: "adaptive" },
@@ -306,5 +302,5 @@ Deno.serve(async (req) => {
     );
   }
 
-  return json({ session_id: sessionId, changes });
-});
+  return json({ session_id: sessionId, changes, request_id: ctx.requestId });
+}));

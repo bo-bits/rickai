@@ -7,8 +7,9 @@
 // invoked (curl); no automation in this iteration.
 
 import type Anthropic from "npm:@anthropic-ai/sdk@0.71.0";
-import { anthropic, MODEL, supabase } from "../_shared/clients.ts";
-import { CORS_HEADERS, json } from "../_shared/http.ts";
+import { MODEL, supabase } from "../_shared/clients.ts";
+import { json, withRequest } from "../_shared/http.ts";
+import { callModel } from "../_shared/telemetry.ts";
 import { dialogueTail, renderTranscript } from "../_shared/transcript.ts";
 import { COMPACT_SYSTEM_PROMPT } from "./system_prompt.ts";
 
@@ -18,14 +19,7 @@ interface CompactRequest {
   session_id?: string;
 }
 
-Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: CORS_HEADERS });
-  }
-  if (req.method !== "POST") {
-    return json({ error: "method not allowed" }, 405);
-  }
-
+Deno.serve(withRequest("compact", async (req, ctx) => {
   let body: CompactRequest;
   try {
     body = await req.json();
@@ -35,6 +29,7 @@ Deno.serve(async (req) => {
 
   const sessionId = body.session_id?.trim();
   if (!sessionId) return json({ error: "session_id is required" }, 400);
+  ctx.sessionId = sessionId;
 
   // --- Load the session -----------------------------------------------------
   const { data: session, error: sessionErr } = await supabase
@@ -51,13 +46,14 @@ Deno.serve(async (req) => {
   }
 
   const studentId = session.student_id as string;
+  ctx.studentId = studentId;
   const topicSlug = (session.topic_slug as string | null) ?? null;
   const messages = (session.messages as Anthropic.MessageParam[]) ?? [];
 
   // --- Summarize ------------------------------------------------------------
   let summary: string;
   try {
-    const response = await anthropic.messages.create({
+    const response = await callModel(ctx, 0, {
       model: MODEL,
       max_tokens: MAX_TOKENS,
       thinking: { type: "adaptive" },
@@ -112,5 +108,5 @@ Deno.serve(async (req) => {
     );
   }
 
-  return json({ new_session_id: created.id });
-});
+  return json({ new_session_id: created.id, request_id: ctx.requestId });
+}));
