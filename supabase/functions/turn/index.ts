@@ -108,9 +108,6 @@ Deno.serve(withRequest("turn", async (req, ctx) => {
     : await sessionQuery.eq("topic_slug", topicSlug).maybeSingle();
 
   if (sessionErr) {
-    console.error("DEBUG session error:", JSON.stringify(sessionErr));
-    console.error("DEBUG env check — SUPABASE_URL:", Deno.env.get("SUPABASE_URL"));
-    console.error("DEBUG env check — key prefix:", Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")?.slice(0, 20));
     return json({ error: `session lookup failed: ${sessionErr.message}` }, 500);
   }
 
