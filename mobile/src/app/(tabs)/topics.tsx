@@ -8,6 +8,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 
 import { StatusDot } from '@/components/status-dot';
 import { ThemedText } from '@/components/themed-text';
@@ -38,6 +39,7 @@ function TopicRow({ topic }: { topic: Topic }) {
 
 export default function Topics() {
   const theme = useTheme();
+  const router = useRouter();
   const [topics, setTopics] = useState<Topic[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -100,7 +102,12 @@ export default function Topics() {
         />
       )}
 
-      <Pressable style={[styles.newButton, { backgroundColor: theme.tint }]}>
+      <Pressable
+        style={({ pressed }) => [
+          styles.newButton,
+          { backgroundColor: theme.tint, opacity: pressed ? 0.8 : 1 },
+        ]}
+        onPress={() => router.navigate('/')}>
         <ThemedText style={[styles.newButtonText, { color: theme.background }]}>
           + New topic
         </ThemedText>
