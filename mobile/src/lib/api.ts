@@ -1,9 +1,24 @@
-// Thin client for our Supabase Edge Functions. Every call carries the user's
-// session JWT as a Bearer token; the `turn` function derives student_id from
-// that token (the body never sends an identity), so the pipe is: app session →
-// JWT → edge function → verified student_id → Anthropic.
-
 import { supabase } from '@/lib/supabase';
+
+export type TopicStatus = 'exploring' | 'developing' | 'solid' | 'mastered';
+
+export type Topic = {
+  topic_slug: string;
+  title: string;
+  status: TopicStatus | null;
+  last_session_at: string | null;
+  resume_prompt: string | null;
+};
+
+export async function fetchTopics(): Promise<Topic[]> {
+  const { data, error } = await supabase
+    .from('topics')
+    .select('topic_slug, title, status, last_session_at, resume_prompt')
+    .order('last_session_at', { ascending: false, nullsFirst: false });
+
+  if (error) throw new Error(error.message);
+  return (data ?? []) as Topic[];
+}
 
 const BASE = process.env.EXPO_PUBLIC_SUPABASE_URL;
 const ANON = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
